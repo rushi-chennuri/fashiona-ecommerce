@@ -42,11 +42,11 @@
   }
 
   .product-card {
-    @apply group relative overflow-hidden bg-white;
+    @apply relative overflow-hidden bg-white;
   }
 
   .product-card:hover .product-image {
-    @apply scale-105;
+    transform: scale(1.05);
   }
 
   .product-image {
