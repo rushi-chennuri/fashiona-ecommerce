@@ -1,0 +1,32 @@
+version: '3.8'
+
+# ── AWS PRODUCTION ────────────────────────────────────────────
+# Uses your existing Aurora PostgreSQL cluster.
+# Copy .env.prod.example → .env.prod and fill in your values.
+# Run with: docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+services:
+  backend:
+    build: ./backend
+    container_name: fashiona-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      JWT_SECRET: ${JWT_SECRET}
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    container_name: fashiona-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
