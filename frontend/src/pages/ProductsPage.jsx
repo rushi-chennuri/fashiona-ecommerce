@@ -9,6 +9,7 @@ const ProductsPage = ({ setCurrentPage, setSelectedProduct }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid");
+  const [minRating, setMinRating] = useState(0);
   const [page, setPage] = useState(1);
   const perPage = 12;
 
@@ -17,13 +18,14 @@ const ProductsPage = ({ setCurrentPage, setSelectedProduct }) => {
     if (selectedCategory !== "all") result = result.filter(p => p.category === selectedCategory);
     if (searchTerm) result = result.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.tags?.some(t => t.includes(searchTerm.toLowerCase())));
     result = result.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    if (minRating > 0) result = result.filter(p => p.rating >= minRating);
     if (sortBy === "price-asc") result = [...result].sort((a, b) => a.price - b.price);
     else if (sortBy === "price-desc") result = [...result].sort((a, b) => b.price - a.price);
     else if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
     else if (sortBy === "newest") result = [...result].sort((a, b) => b.id - a.id);
     else result = [...result].sort((a, b) => b.reviews - a.reviews);
     return result;
-  }, [selectedCategory, sortBy, priceRange, searchTerm]);
+  }, [selectedCategory, sortBy, priceRange, searchTerm, minRating]);
 
   const paginated = filtered.slice(0, page * perPage);
 
@@ -138,13 +140,19 @@ const ProductsPage = ({ setCurrentPage, setSelectedProduct }) => {
               {/* Ratings Filter */}
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wider">Min Rating</h3>
+                <button onClick={() => setMinRating(0)}
+                  className={`w-full text-left text-sm px-3 py-2 rounded-lg mb-1 transition-all flex items-center gap-2 ${minRating === 0 ? "bg-rose-50 text-rose-600 font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
+                  All ratings
+                </button>
                 {[4.5, 4.0, 3.5].map(r => (
-                  <button key={r} className="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-gray-600">
+                  <button key={r} onClick={() => setMinRating(minRating === r ? 0 : r)}
+                    className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 ${minRating === r ? "bg-rose-50 text-rose-600 font-semibold" : "text-gray-600 hover:bg-gray-50"}`}>
                     {[1,2,3,4,5].map(s => (
                       <svg key={s} className={`w-3.5 h-3.5 ${s <= r ? "text-amber-400" : "text-gray-200"}`} fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                       </svg>
-                    ))} & above
+                    ))}
+                    <span className="ml-1 text-xs">& above</span>
                   </button>
                 ))}
               </div>
@@ -158,7 +166,7 @@ const ProductsPage = ({ setCurrentPage, setSelectedProduct }) => {
                 <div className="text-6xl mb-4">🔍</div>
                 <h3 className="font-bold text-xl text-gray-700 mb-2">No products found</h3>
                 <p className="text-gray-500">Try adjusting your filters</p>
-                <button onClick={() => { setSelectedCategory("all"); setSearchTerm(""); setPriceRange([0, 20000]); }}
+                <button onClick={() => { setSelectedCategory("all"); setSearchTerm(""); setPriceRange([0, 20000]); setMinRating(0); }}
                   className="mt-4 px-6 py-2.5 bg-rose-600 text-white rounded-lg text-sm font-medium">
                   Clear Filters
                 </button>

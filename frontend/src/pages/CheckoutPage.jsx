@@ -28,13 +28,18 @@ const CheckoutPage = ({ setCurrentPage }) => {
   if (ordered) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-xl">
+        {/* Demo mode reminder on success screen */}
+        <div className="mb-6 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-2xl flex items-center gap-2">
+          <span className="text-base">🛍️</span>
+          <span><strong>Demo Mode</strong> — This is a showcase order. No real payment was charged and no goods will be shipped.</span>
+        </div>
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <h2 className="font-display text-3xl font-bold text-gray-900 mb-2">Order Placed! 🎉</h2>
-        <p className="text-gray-500 mb-6">Thank you for shopping with Fashiona! Your order will be delivered in 2-5 business days.</p>
+        <p className="text-gray-500 mb-6">This is a demo order flow. In production this would confirm your order and send a tracking email.</p>
         <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Order ID</span>
@@ -63,6 +68,13 @@ const CheckoutPage = ({ setCurrentPage }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Demo Mode Banner */}
+      <div className="bg-amber-50 border-b border-amber-200 py-2.5 px-6 text-center">
+        <span className="text-amber-800 text-sm font-medium">
+          🛍️ <strong>Demo Mode</strong> — Checkout flow is fully functional for showcase purposes. No real payments will be processed.
+        </span>
+      </div>
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 py-4 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -187,7 +199,15 @@ const CheckoutPage = ({ setCurrentPage }) => {
                 </div>
               )}
 
-              <div className="flex gap-3 mt-6">
+              {/* Demo note */}
+              <div className="mt-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span><strong>Demo Mode:</strong> Enter any valid-looking details. No real payment will be charged.</span>
+              </div>
+
+              <div className="flex gap-3 mt-4">
                 <button onClick={() => setStep(1)} className="flex-1 py-4 border-2 border-gray-200 text-gray-700 font-bold rounded-xl text-sm hover:border-gray-400 transition-colors">← Back</button>
                 <button onClick={() => setStep(3)} className="flex-1 py-4 btn-primary text-white font-bold rounded-xl text-sm tracking-wide">Review Order →</button>
               </div>
@@ -227,7 +247,7 @@ const CheckoutPage = ({ setCurrentPage }) => {
               <div className="flex gap-3">
                 <button onClick={() => setStep(2)} className="flex-1 py-4 border-2 border-gray-200 text-gray-700 font-bold rounded-xl text-sm hover:border-gray-400 transition-colors">← Back</button>
                 <button onClick={handleOrder} className="flex-1 py-4 btn-primary text-white font-bold rounded-xl text-sm tracking-wide">
-                  Place Order • {formatPrice(total)}
+                  Place Demo Order • {formatPrice(total)}
                 </button>
               </div>
             </div>

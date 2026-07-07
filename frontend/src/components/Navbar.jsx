@@ -1,8 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext";
 
 const Navbar = ({ currentPage, setCurrentPage }) => {
-  const { cartCount, setCartOpen, wishlist, setSearchOpen, user } = useApp();
+  const { cartCount, setCartOpen, wishlist, setSearchOpen, user, logout } = useApp();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target))
+        setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -123,14 +135,54 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
                 )}
               </button>
 
-              {/* User */}
-              <button onClick={() => setCurrentPage("account")}
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                {user ? user.name.split(" ")[0] : "Login"}
-              </button>
+              {/* User — Login button or avatar+dropdown */}
+              {user ? (
+                <div className="relative hidden sm:block" ref={userMenuRef}>
+                  <button onClick={() => setUserMenuOpen(v => !v)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all">
+                    <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
+                      {user.avatar}
+                    </div>
+                    {user.name.split(" ")[0]}
+                    <svg className={`w-3 h-3 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-2 z-50">
+                      <div className="px-4 py-2 border-b border-gray-800">
+                        <p className="text-white text-sm font-medium truncate">{user.name}</p>
+                        <p className="text-gray-400 text-xs truncate">{user.email}</p>
+                      </div>
+                      <button onClick={() => { setCurrentPage("account"); setUserMenuOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2 transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        My Account
+                      </button>
+                      <button onClick={() => { setCurrentPage("account"); setUserMenuOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2 transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                        My Orders
+                      </button>
+                      <div className="border-t border-gray-800 mt-1 pt-1">
+                        <button onClick={() => { logout(); setUserMenuOpen(false); }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-rose-400 hover:text-rose-300 hover:bg-gray-800 flex items-center gap-2 transition-colors">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button onClick={() => setCurrentPage("account")}
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Login
+                </button>
+              )}
 
               {/* Mobile menu */}
               <button onClick={() => setMobileMenu(!mobileMenu)}
@@ -156,10 +208,30 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
                 {link.label}
               </button>
             ))}
-            <button onClick={() => setCurrentPage("account")}
-              className="mt-4 w-full py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg text-sm font-medium">
-              Login / Register
-            </button>
+            {user ? (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-3 px-1 py-2 border-b border-gray-800">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-400 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
+                    {user.avatar}
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">{user.name}</p>
+                    <p className="text-gray-400 text-xs">{user.email}</p>
+                  </div>
+                </div>
+                <button onClick={() => { setCurrentPage("account"); setMobileMenu(false); }}
+                  className="w-full py-2.5 text-left text-gray-300 text-sm pl-2">My Account & Orders</button>
+                <button onClick={() => { logout(); setMobileMenu(false); }}
+                  className="w-full py-2.5 bg-rose-600/20 text-rose-400 rounded-lg text-sm font-medium">
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => { setCurrentPage("account"); setMobileMenu(false); }}
+                className="mt-4 w-full py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg text-sm font-medium">
+                Login / Register
+              </button>
+            )}
           </div>
         )}
       </nav>

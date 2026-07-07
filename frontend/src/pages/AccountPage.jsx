@@ -5,8 +5,8 @@ import { formatPrice } from "../data/products";
 const mockOrders = [
   { id: "FAS20240101", date: "Jan 12, 2024", status: "Delivered", total: 8999, items: 2,
     products: [
-      { name: "Kanjivaram Silk Saree", image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=80&h=100&fit=crop" },
-      { name: "Block Heel Sandals", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=80&h=100&fit=crop" },
+      { name: "Kanjivaram Silk Saree",  image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=80&h=100&fit=crop" },
+      { name: "Block Heel Sandals",      image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=80&h=100&fit=crop" },
     ]
   },
   { id: "FAS20240089", date: "Dec 28, 2023", status: "Shipped", total: 4599, items: 1,
@@ -18,29 +18,63 @@ const mockOrders = [
 ];
 
 const AccountPage = ({ setCurrentPage }) => {
-  const { user, setUser, wishlist } = useApp();
-  const [activeTab, setActiveTab] = useState("orders");
-  const [isLogin, setIsLogin] = useState(true);
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "", confirm: "" });
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setUser({ name: "Rushi Chennuri", email: loginForm.email || "rushi@fashiona.com", avatar: "R" });
-  };
-
-  const handleRegister = (e) => {
-    e.preventDefault();
-    setUser({ name: registerForm.name || "New User", email: registerForm.email, avatar: registerForm.name?.[0]?.toUpperCase() || "U" });
-  };
+  const { user, logout, login, register, wishlist } = useApp();
+  const [activeTab, setActiveTab]   = useState("orders");
+  const [isLogin, setIsLogin]       = useState(true);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+  const [loginForm, setLoginForm]   = useState({ email: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({
+    firstName: "", lastName: "", email: "", password: "", confirm: ""
+  });
 
   const statusColors = {
-    Delivered: "bg-green-100 text-green-700",
-    Shipped: "bg-blue-100 text-blue-700",
+    Delivered:  "bg-green-100 text-green-700",
+    Shipped:    "bg-blue-100 text-blue-700",
     Processing: "bg-yellow-100 text-yellow-700",
-    Cancelled: "bg-red-100 text-red-700",
+    Cancelled:  "bg-red-100 text-red-700",
   };
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await login(loginForm.email, loginForm.password);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (registerForm.password !== registerForm.confirm) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (registerForm.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    setLoading(true);
+    try {
+      await register(
+        registerForm.firstName,
+        registerForm.lastName,
+        registerForm.email,
+        registerForm.password
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Guest / Auth Screen ──────────────────────────────────────
   if (!user) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -55,22 +89,33 @@ const AccountPage = ({ setCurrentPage }) => {
 
         {/* Toggle */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-          <button onClick={() => setIsLogin(true)}
+          <button onClick={() => { setIsLogin(true); setError(""); }}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${isLogin ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
             Sign In
           </button>
-          <button onClick={() => setIsLogin(false)}
+          <button onClick={() => { setIsLogin(false); setError(""); }}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${!isLogin ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
             Create Account
           </button>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {error}
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-lg p-6">
           {isLogin ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">Email</label>
-                <input type="email" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})}
+                <input type="email" required value={loginForm.email}
+                  onChange={e => setLoginForm({ ...loginForm, email: e.target.value })}
                   placeholder="you@example.com"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 transition-colors" />
               </div>
@@ -79,12 +124,20 @@ const AccountPage = ({ setCurrentPage }) => {
                   <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Password</label>
                   <button type="button" className="text-xs text-rose-500 font-medium hover:underline">Forgot password?</button>
                 </div>
-                <input type="password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                <input type="password" required value={loginForm.password}
+                  onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 transition-colors" />
               </div>
-              <button type="submit" className="w-full py-3.5 btn-primary text-white font-bold rounded-xl text-sm tracking-wide mt-2">
-                Sign In to Fashiona
+              <button type="submit" disabled={loading}
+                className="w-full py-3.5 btn-primary text-white font-bold rounded-xl text-sm tracking-wide mt-2 disabled:opacity-60 flex items-center justify-center gap-2">
+                {loading && (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                )}
+                {loading ? "Signing in…" : "Sign In to Fashiona"}
               </button>
 
               <div className="relative my-4">
@@ -104,28 +157,50 @@ const AccountPage = ({ setCurrentPage }) => {
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">First Name</label>
+                  <input type="text" required placeholder="First name"
+                    value={registerForm.firstName}
+                    onChange={e => setRegisterForm({ ...registerForm, firstName: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">Last Name</label>
+                  <input type="text" required placeholder="Last name"
+                    value={registerForm.lastName}
+                    onChange={e => setRegisterForm({ ...registerForm, lastName: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 transition-colors" />
+                </div>
+              </div>
               {[
-                ["name","Full Name","text","Your full name"],
-                ["email","Email","email","you@example.com"],
-                ["password","Password","password","••••••••"],
-                ["confirm","Confirm Password","password","••••••••"],
+                ["email",    "Email",            "email",    "you@example.com"],
+                ["password", "Password",         "password", "Min 6 characters"],
+                ["confirm",  "Confirm Password", "password", "Repeat password"],
               ].map(([field, label, type, placeholder]) => (
                 <div key={field}>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">{label}</label>
-                  <input type={type} placeholder={placeholder}
+                  <input type={type} required placeholder={placeholder}
                     value={registerForm[field]}
-                    onChange={e => setRegisterForm({...registerForm, [field]: e.target.value})}
+                    onChange={e => setRegisterForm({ ...registerForm, [field]: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 transition-colors" />
                 </div>
               ))}
               <div className="flex items-start gap-2 mt-2">
-                <input type="checkbox" id="terms" className="mt-0.5 accent-rose-500" />
+                <input type="checkbox" required id="terms" className="mt-0.5 accent-rose-500" />
                 <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed">
                   I agree to the <span className="text-rose-500 font-medium cursor-pointer">Terms of Service</span> and <span className="text-rose-500 font-medium cursor-pointer">Privacy Policy</span>
                 </label>
               </div>
-              <button type="submit" className="w-full py-3.5 btn-primary text-white font-bold rounded-xl text-sm tracking-wide">
-                Create Account
+              <button type="submit" disabled={loading}
+                className="w-full py-3.5 btn-primary text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60 flex items-center justify-center gap-2">
+                {loading && (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                )}
+                {loading ? "Creating account…" : "Create Account"}
               </button>
             </form>
           )}
@@ -134,6 +209,7 @@ const AccountPage = ({ setCurrentPage }) => {
     </div>
   );
 
+  // ── Logged-in Dashboard ─────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Profile Header */}
@@ -150,7 +226,8 @@ const AccountPage = ({ setCurrentPage }) => {
               <span className="text-xs text-gray-400">Member since 2024</span>
             </div>
           </div>
-          <button onClick={() => setUser(null)} className="ml-auto px-4 py-2 border border-white/20 text-white/70 text-xs rounded-lg hover:border-white/40 hover:text-white transition-colors">
+          <button onClick={logout}
+            className="ml-auto px-4 py-2 border border-white/20 text-white/70 text-xs rounded-lg hover:border-white/40 hover:text-white transition-colors">
             Sign Out
           </button>
         </div>
@@ -160,10 +237,10 @@ const AccountPage = ({ setCurrentPage }) => {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Total Orders", value: mockOrders.length, icon: "📦" },
-            { label: "Wishlist Items", value: wishlist.length, icon: "❤️" },
-            { label: "Points Earned", value: "2,450", icon: "⭐" },
-            { label: "Amount Saved", value: "₹3,200", icon: "💰" },
+            { label: "Total Orders",  value: mockOrders.length, icon: "📦" },
+            { label: "Wishlist Items", value: wishlist.length,  icon: "❤️" },
+            { label: "Points Earned", value: "2,450",          icon: "⭐" },
+            { label: "Amount Saved",  value: "₹3,200",         icon: "💰" },
           ].map(({ label, value, icon }) => (
             <div key={label} className="bg-white rounded-2xl p-4 shadow-sm text-center">
               <div className="text-2xl mb-1">{icon}</div>
@@ -176,10 +253,10 @@ const AccountPage = ({ setCurrentPage }) => {
         {/* Tabs */}
         <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm mb-6 overflow-x-auto">
           {[
-            { key: "orders", label: "My Orders", icon: "📦" },
-            { key: "profile", label: "Profile", icon: "👤" },
-            { key: "addresses", label: "Addresses", icon: "📍" },
-            { key: "notifications", label: "Notifications", icon: "🔔" },
+            { key: "orders",        label: "My Orders",      icon: "📦" },
+            { key: "profile",       label: "Profile",        icon: "👤" },
+            { key: "addresses",     label: "Addresses",      icon: "📍" },
+            { key: "notifications", label: "Notifications",  icon: "🔔" },
           ].map(({ key, label, icon }) => (
             <button key={key} onClick={() => setActiveTab(key)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
@@ -205,7 +282,6 @@ const AccountPage = ({ setCurrentPage }) => {
                     <span className="font-bold text-gray-900">{formatPrice(order.total)}</span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3">
                   {order.products.map((p, i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -215,7 +291,6 @@ const AccountPage = ({ setCurrentPage }) => {
                     </div>
                   ))}
                 </div>
-
                 <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
                   <button className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:border-gray-400 transition-colors">Track Order</button>
                   {order.status === "Delivered" && (
@@ -234,7 +309,13 @@ const AccountPage = ({ setCurrentPage }) => {
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <h3 className="font-bold text-lg text-gray-800 mb-6">Personal Information</h3>
             <div className="grid grid-cols-2 gap-4">
-              {[["Full Name", user.name],["Email", user.email],["Phone", "+91 98765 43210"],["Date of Birth", "March 15, 1995"],["Gender", "Female"]].map(([label, val]) => (
+              {[
+                ["Full Name",    user.name],
+                ["Email",        user.email],
+                ["Phone",        "+91 98765 43210"],
+                ["Date of Birth","March 15, 1995"],
+                ["Gender",       "Female"],
+              ].map(([label, val]) => (
                 <div key={label}>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{label}</label>
                   <input defaultValue={val} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-rose-400 transition-colors" />
@@ -249,8 +330,8 @@ const AccountPage = ({ setCurrentPage }) => {
         {activeTab === "addresses" && (
           <div className="space-y-4">
             {[
-              { type: "Home", address: "123, MG Road, Koramangala", city: "Bangalore", state: "Karnataka", pin: "560034", default: true },
-              { type: "Office", address: "45, Banjara Hills, Road No. 12", city: "Hyderabad", state: "Telangana", pin: "500034", default: false },
+              { type: "Home",   address: "123, MG Road, Koramangala",       city: "Bangalore",  state: "Karnataka", pin: "560034", default: true },
+              { type: "Office", address: "45, Banjara Hills, Road No. 12",   city: "Hyderabad",  state: "Telangana", pin: "500034", default: false },
             ].map(addr => (
               <div key={addr.type} className="bg-white rounded-2xl p-5 shadow-sm flex items-start justify-between">
                 <div>
@@ -280,11 +361,11 @@ const AccountPage = ({ setCurrentPage }) => {
             <h3 className="font-bold text-lg text-gray-800 mb-4">Notification Preferences</h3>
             <div className="space-y-4">
               {[
-                ["Order Updates", "Track your orders in real-time", true],
-                ["Flash Sale Alerts", "Be first to know about sales", true],
-                ["New Arrivals", "Get notified about new products", false],
-                ["Newsletter", "Weekly style tips and offers", false],
-                ["Push Notifications", "Allow browser notifications", true],
+                ["Order Updates",      "Track your orders in real-time",       true],
+                ["Flash Sale Alerts",  "Be first to know about sales",         true],
+                ["New Arrivals",       "Get notified about new products",      false],
+                ["Newsletter",         "Weekly style tips and offers",         false],
+                ["Push Notifications", "Allow browser notifications",          true],
               ].map(([label, desc, def]) => (
                 <div key={label} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                   <div>
